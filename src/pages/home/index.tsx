@@ -11,14 +11,13 @@ import {
 } from "../../services/product/product.service";
 import type { IGetProducts } from "../../services/product/product.interface";
 
-type Confirmation = {
-  action: "delete" | "deactivate";
-  item: IGetProducts;
-};
-
 export function Home() {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  const [productToDelete, setProductToDelete] = useState<IGetProducts | null>(
+    null,
+  );
+  const [productToDeactivate, setProductToDeactivate] =
+    useState<IGetProducts | null>(null);
   const [editingItem, setEditingItem] = useState<IGetProducts | null>(null);
   const [products, setProducts] = useState<IGetProducts[]>([]);
 
@@ -129,15 +128,16 @@ export function Home() {
     }
   };
 
-  const handleConfirmation = async () => {
-    if (!confirmation) return;
+  const confirmDelete = async () => {
+    if (!productToDelete) return;
+    await deleteItem(productToDelete);
+    setProductToDelete(null);
+  };
 
-    if (confirmation.action === "delete") {
-      await deleteItem(confirmation.item);
-    } else {
-      await toggleItemStatus(confirmation.item);
-    }
-    setConfirmation(null);
+  const confirmDeactivation = async () => {
+    if (!productToDeactivate) return;
+    await toggleItemStatus(productToDeactivate);
+    setProductToDeactivate(null);
   };
 
   useEffect(() => {
@@ -158,7 +158,6 @@ export function Home() {
     };
   }, []);
 
-
   return (
     <main className="mx-auto max-w-5xl space-y-4 p-6">
       <div className="flex items-center justify-between gap-4">
@@ -172,7 +171,6 @@ export function Home() {
         </button>
       </div>
 
-  
       <Table
         data={products}
         columns={[
@@ -205,18 +203,17 @@ export function Home() {
             label: item.isActive ? "Inativar item" : "Ativar item",
             onClick: (selectedItem) =>
               selectedItem.isActive
-                ? setConfirmation({ action: "deactivate", item: selectedItem })
+                ? setProductToDeactivate(selectedItem)
                 : toggleItemStatus(selectedItem),
           },
           {
             label: "Deletar item",
-            onClick: (selectedItem) =>
-              setConfirmation({ action: "delete", item: selectedItem }),
+            onClick: setProductToDelete,
             variant: "danger",
           },
         ]}
       />
-          <Modal
+      <Modal
         isOpen={isProductModalOpen}
         onClose={closeProductModal}
         title={editingItem ? "Editar produto" : "Adicionar produto"}
@@ -233,9 +230,9 @@ export function Home() {
               id="product-name"
               required
               value={body.name}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {                 
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                 const name = event.target.value;
-                    console.log("Digitando:", event.target.value);
+                console.log("Digitando:", event.target.value);
 
                 setBody((currentBody) => ({ ...currentBody, name }));
               }}
@@ -282,39 +279,61 @@ export function Home() {
       </Modal>
 
       <Modal
-        isOpen={confirmation !== null}
-        onClose={() => setConfirmation(null)}
-        title={
-          confirmation?.action === "delete"
-            ? "Deletar produto"
-            : "Inativar produto"
-        }
+        isOpen={productToDelete !== null}
+        onClose={() => setProductToDelete(null)}
+        title="Deletar produto"
       >
         <div className="space-y-5">
           <p className="text-sm text-gray-600">
-            {confirmation?.action === "delete"
-              ? `Tem certeza que deseja deletar "${confirmation.item.name}"? Esta ação não pode ser desfeita.`
-              : `Tem certeza que deseja inativar "${confirmation?.item.name}"?`}
+            Tem certeza que deseja deletar "{productToDelete?.name}"? Esta ação
+            não pode ser desfeita.
           </p>
           <div className="flex justify-end gap-3">
             <button
               type="button"
-              onClick={() => setConfirmation(null)}
+              onClick={() => setProductToDelete(null)}
               className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
               Cancelar
             </button>
             <button
               type="button"
-              onClick={handleConfirmation}
+              onClick={confirmDelete}
               className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
             >
-              {confirmation?.action === "delete" ? "Deletar" : "Inativar"}
+              Deletar
             </button>
           </div>
         </div>
       </Modal>
 
+      <Modal
+        isOpen={productToDeactivate !== null}
+        onClose={() => setProductToDeactivate(null)}
+        title="Inativar produto"
+      >
+        <div className="space-y-5">
+          <p className="text-sm text-gray-600">
+            Tem certeza que deseja inativar "{productToDeactivate?.name}"?
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setProductToDeactivate(null)}
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={confirmDeactivation}
+              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            >
+              Inativar
+            </button>
+          </div>
+        </div>
+      </Modal>
     </main>
   );
 }
