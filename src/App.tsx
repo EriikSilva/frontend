@@ -1,12 +1,16 @@
-import { useState } from 'react'
 import './App.css'
+import { ToastContainer } from 'react-toastify'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { Home } from './pages/home'
 
 function App() {
-
   return (
-    <>
-      <div>Teste</div>
-    </>
+    <BrowserRouter>
+      <ToastContainer />
+      <Routes>
+        <Route path="/" element={<Home />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
