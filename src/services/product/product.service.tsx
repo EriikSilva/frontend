@@ -6,6 +6,11 @@ export async function getProducts():Promise<IGetProducts[]> {
     return response.data
 }
 
+export async function getActiveProducts():Promise<IGetProducts[]> {
+    const response = await api.get<IGetProducts[]>('/product/active')
+    return response.data
+}
+
 export async function getProductById(id: string): Promise<IGetProducts> {
     const response = await api.get<IGetProducts>(`/product/${id}`)
     return response.data

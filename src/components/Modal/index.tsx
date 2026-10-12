@@ -19,21 +19,12 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   }, [onClose])
 
   useEffect(() => {
-    if (!isOpen) return
-
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    dialogRef.current?.focus()
-
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onCloseRef.current()
+    if(isOpen) {
+      document.body.style.overflow = 'hidden'
+    }else{
+      document.body.style.overflow = ''
     }
-    document.addEventListener('keydown', closeOnEscape)
 
-    return () => {
-      document.body.style.overflow = previousOverflow
-      document.removeEventListener('keydown', closeOnEscape)
-    }
   }, [isOpen])
 
   if (!isOpen) return null

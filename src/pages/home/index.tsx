@@ -11,7 +11,6 @@ import {
 } from "../../services/product/product.service";
 import type { IGetProducts } from "../../services/product/product.interface";
 
-
 type Confirmation = {
   action: "delete" | "deactivate";
   item: IGetProducts;
@@ -25,20 +24,18 @@ export function Home() {
 
   const [body, setBody] = useState({
     name: "",
-    price: 0,
+    price: "",
   });
-
-
 
   const openAddModal = () => {
     setEditingItem(null);
-    setBody({ name: "", price: 0 });
+    setBody({ name: "", price: "" });
     setIsProductModalOpen(true);
   };
 
   const openEditModal = (item: IGetProducts) => {
     setEditingItem(item);
-    setBody({ name: item.name, price: item.price });
+    setBody({ name: item.name, price: String(item.price) });
     setIsProductModalOpen(true);
   };
 
@@ -52,10 +49,15 @@ export function Home() {
 
     const product = {
       name: body.name.trim(),
-      price: body.price,
+      price: Number(body.price),
     };
 
-    if (!product.name || !Number.isFinite(product.price) || product.price < 0) {
+    if (
+      !product.name ||
+      body.price.trim() === "" ||
+      !Number.isFinite(product.price) ||
+      product.price < 0
+    ) {
       return;
     }
 
@@ -138,7 +140,6 @@ export function Home() {
     setConfirmation(null);
   };
 
-
   useEffect(() => {
     let isMounted = true;
 
@@ -157,6 +158,7 @@ export function Home() {
     };
   }, []);
 
+
   return (
     <main className="mx-auto max-w-5xl space-y-4 p-6">
       <div className="flex items-center justify-between gap-4">
@@ -170,7 +172,51 @@ export function Home() {
         </button>
       </div>
 
-      <Modal
+  
+      <Table
+        data={products}
+        columns={[
+          { key: "name", header: "Nome", render: (item) => item.name },
+          {
+            key: "price",
+            header: "Preço",
+            render: (item) => `R$ ${item.price.toFixed(2)}`,
+          },
+          {
+            key: "status",
+            header: "Status",
+            render: (item) => (
+              <span
+                className={
+                  item.isActive
+                    ? "inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800"
+                    : "inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600"
+                }
+              >
+                {item.isActive ? "Ativo" : "Inativo"}
+              </span>
+            ),
+          },
+        ]}
+        getRowKey={(item) => item.id}
+        floatingMenu={(item) => [
+          { label: "Editar", onClick: openEditModal },
+          {
+            label: item.isActive ? "Inativar item" : "Ativar item",
+            onClick: (selectedItem) =>
+              selectedItem.isActive
+                ? setConfirmation({ action: "deactivate", item: selectedItem })
+                : toggleItemStatus(selectedItem),
+          },
+          {
+            label: "Deletar item",
+            onClick: (selectedItem) =>
+              setConfirmation({ action: "delete", item: selectedItem }),
+            variant: "danger",
+          },
+        ]}
+      />
+          <Modal
         isOpen={isProductModalOpen}
         onClose={closeProductModal}
         title={editingItem ? "Editar produto" : "Adicionar produto"}
@@ -181,12 +227,18 @@ export function Home() {
               htmlFor="product-name"
               className="block text-sm font-medium text-gray-700"
             >
-              Nome
+              Nomeaa
             </label>
             <input
+              id="product-name"
               required
               value={body.name}
-              onChange={(event) => setBody({ ...body, name: event.target.value }  )}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {                 
+                const name = event.target.value;
+                    console.log("Digitando:", event.target.value);
+
+                setBody((currentBody) => ({ ...currentBody, name }));
+              }}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
@@ -198,10 +250,16 @@ export function Home() {
               Preço
             </label>
             <input
+              id="product-price"
               type="number"
+              min="0"
+              step="0.01"
               required
               value={body.price}
-              onChange={(event) => setBody({ ...body, price: Number(event.target.value) })}
+              onChange={(event) => {
+                const price = event.target.value;
+                setBody((currentBody) => ({ ...currentBody, price }));
+              }}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
@@ -257,48 +315,6 @@ export function Home() {
         </div>
       </Modal>
 
-      <Table
-        data={products}
-        columns={[
-          { key: "name", header: "Nome", render: (item) => item.name },
-          {
-            key: "price",
-            header: "Preço",
-            render: (item) => `R$ ${item.price.toFixed(2)}`,
-          },
-          {
-            key: "status",
-            header: "Status",
-            render: (item) => (
-              <span
-                className={
-                  item.isActive
-                    ? "inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800"
-                    : "inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600"
-                }
-              >
-                {item.isActive ? "Ativo" : "Inativo"}
-              </span>
-            ),
-          },
-        ]}
-        getRowKey={(item) => item.id}
-        floatingMenu={(item) => [
-          { label: "Editar", onClick: openEditModal },
-          {
-            label: item.isActive ? "Inativar item" : "Ativar item",
-            onClick: (selectedItem) =>
-              selectedItem.isActive
-                ? setConfirmation({ action: "deactivate", item: selectedItem })
-                : toggleItemStatus(selectedItem),
-          },
-          {
-            label: "Deletar item",
-            onClick: (selectedItem) => setConfirmation({ action: "delete", item: selectedItem }),
-            variant: "danger",
-          },
-        ]}
-      />
     </main>
   );
 }

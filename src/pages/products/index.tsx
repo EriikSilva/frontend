@@ -1,36 +1,27 @@
-import { useEffect, useState } from 'react'
-import { Card } from '../../components/Card'
-import type { IGetProducts } from '../../services/product/product.interface'
-import { getProducts } from '../../services/product/product.service'
+import { useEffect, useState } from "react";
+import { Card } from "../../components/Card";
+import type { IGetProducts } from "../../services/product/product.interface";
+import { getActiveProducts, getProducts } from "../../services/product/product.service";
 
 export default function Products() {
-  const [products, setProducts] = useState<IGetProducts[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [products, setProducts] = useState<IGetProducts[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProducts = async () => {
+    try {
+      const data = await getActiveProducts();
+      setProducts(data);
+    } catch (e) {
+      setError("Não foi possível carregar os produtos.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let isMounted = true
-
-    getProducts()
-      .then((result) => {
-        if (isMounted) setProducts(result)
-      })
-      .catch((requestError: unknown) => {
-        if (!isMounted) return
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : 'Não foi possível carregar os produtos.',
-        )
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false)
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
+    fetchProducts();
+  }, []);
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
@@ -57,5 +48,5 @@ export default function Products() {
         </p>
       )}
     </main>
-  )
+  );
 }
