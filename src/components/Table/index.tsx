@@ -1,6 +1,7 @@
 import type { Key, ReactNode } from 'react'
 import { FloatMenu } from '../FloatMenu'
-import type { FloatMenuAction } from '../FloatMenu'
+import type { FloatMenuAction } from '../FloatMenu/floatMenu.interface'
+
 
 export interface TableColumn<T> {
   key: string

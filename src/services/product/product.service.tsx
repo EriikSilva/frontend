@@ -1,11 +1,7 @@
 import api from '../../utils/api'
+import type { IGetProducts } from './product.interface'
 
-export interface IGetProducts {
-    id:       string;
-    name:     string;
-    price:    number;
-    isActive: boolean;
-}
+
 
 
 export async function getProducts():Promise<IGetProducts[]> {

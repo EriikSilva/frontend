@@ -4,20 +4,20 @@ import { Modal } from "../../components/Modal";
 import { Table } from "../../components/Table";
 import {
   getProducts,
-  type IGetProducts,
 } from "../../services/product/product.service";
+import type { IGetProducts } from "../../services/product/product.interface";
+import Header from "../../components/Header";
 
-type Item = IGetProducts;
 
 type Confirmation = {
   action: "delete" | "deactivate";
-  item: Item;
+  item: IGetProducts;
 };
 
 export function Home() {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
-  const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [editingItem, setEditingItem] = useState<IGetProducts | null>(null);
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
 
@@ -29,7 +29,7 @@ export function Home() {
     setIsProductModalOpen(true);
   };
 
-  const openEditModal = (item: Item) => {
+  const openEditModal = (item: IGetProducts) => {
     setEditingItem(item);
     setNewItemName(item.name);
     setNewItemPrice(String(item.price));
@@ -52,7 +52,7 @@ export function Home() {
     closeProductModal();
   };
 
-  const toggleItemStatus = (item: Item) => {
+  const toggleItemStatus = (item: IGetProducts) => {
     setProducts((currentProducts) =>
       currentProducts.map((product) =>
         product.id === item.id
@@ -62,7 +62,7 @@ export function Home() {
     );
   };
 
-  const deleteItem = (item: Item) => {
+  const deleteItem = (item: IGetProducts) => {
     setProducts((currentProducts) =>
       currentProducts.filter((product) => product.id !== item.id),
     );
@@ -232,17 +232,17 @@ export function Home() {
           {
             label: item.isActive ? "Inativar item" : "Ativar item",
             onClick: (selectedItem) =>
-              console.log("ativar/inativar", selectedItem), 
-              // selectedItem.isActive
-              //   ? setConfirmation({ action: "deactivate", item: selectedItem })
-              //   : toggleItemStatus(selectedItem),
+     
+              selectedItem.isActive
+                ? setConfirmation({ action: "deactivate", item: selectedItem })
+                : toggleItemStatus(selectedItem),
           },
           {
             label: "Deletar item",
             onClick: (selectedItem) =>
-               console.log("ativar/inativar", selectedItem), 
-              // setConfirmation({ action: "delete", item: selectedItem }),
-            // variant: "danger",
+
+              setConfirmation({ action: "delete", item: selectedItem }),
+            variant: "danger",
           },
         ]}
       />
