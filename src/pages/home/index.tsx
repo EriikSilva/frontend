@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import { toast } from "react-toastify";
 import { Modal } from "../../components/Modal";
 import { Table } from "../../components/Table";
 import {
   getProducts,
+  postProduct,
+  putProduct,
+  deleteProduct,
 } from "../../services/product/product.service";
 import type { IGetProducts } from "../../services/product/product.interface";
-import Header from "../../components/Header";
 
 
 type Confirmation = {
@@ -18,21 +21,24 @@ export function Home() {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [editingItem, setEditingItem] = useState<IGetProducts | null>(null);
-  const [newItemName, setNewItemName] = useState("");
-  const [newItemPrice, setNewItemPrice] = useState("");
+  const [products, setProducts] = useState<IGetProducts[]>([]);
+
+  const [body, setBody] = useState({
+    name: "",
+    price: 0,
+  });
+
 
 
   const openAddModal = () => {
     setEditingItem(null);
-    setNewItemName("");
-    setNewItemPrice("");
+    setBody({ name: "", price: 0 });
     setIsProductModalOpen(true);
   };
 
   const openEditModal = (item: IGetProducts) => {
     setEditingItem(item);
-    setNewItemName(item.name);
-    setNewItemPrice(String(item.price));
+    setBody({ name: item.name, price: item.price });
     setIsProductModalOpen(true);
   };
 
@@ -41,59 +47,114 @@ export function Home() {
     setEditingItem(null);
   };
 
-  const saveItem = (event: FormEvent<HTMLFormElement>) => {
+  const saveItem = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const name = newItemName.trim();
-    const price = Number(newItemPrice);
-    if (!name || !Number.isFinite(price) || price < 0) return;
 
+    const product = {
+      name: body.name.trim(),
+      price: body.price,
+    };
 
+    if (!product.name || !Number.isFinite(product.price) || product.price < 0) {
+      return;
+    }
 
-    closeProductModal();
+    try {
+      if (editingItem) {
+        const updatedProduct = await putProduct(editingItem.id, {
+          ...product,
+          isActive: editingItem.isActive,
+        });
+        setProducts((currentProducts) =>
+          currentProducts.map((currentProduct) =>
+            currentProduct.id === editingItem.id
+              ? updatedProduct
+              : currentProduct,
+          ),
+        );
+        toast.success("Produto atualizado com sucesso.");
+      } else {
+        const createdProduct = await postProduct(product);
+        setProducts((currentProducts) => [...currentProducts, createdProduct]);
+        toast.success("Produto adicionado com sucesso.");
+      }
+
+      closeProductModal();
+    } catch {
+      toast.error(
+        editingItem
+          ? "Não foi possível atualizar o produto."
+          : "Não foi possível adicionar o produto.",
+      );
+    }
   };
 
-  const toggleItemStatus = (item: IGetProducts) => {
-    setProducts((currentProducts) =>
-      currentProducts.map((product) =>
-        product.id === item.id
-          ? { ...product, isActive: !product.isActive }
-          : product,
-      ),
-    );
+  const toggleItemStatus = async (item: IGetProducts) => {
+    try {
+      const updatedProduct = await putProduct(item.id, {
+        name: item.name,
+        price: item.price,
+        isActive: !item.isActive,
+      });
+      setProducts((currentProducts) =>
+        currentProducts.map((product) =>
+          product.id === item.id ? updatedProduct : product,
+        ),
+      );
+      toast.success(
+        updatedProduct.isActive
+          ? "Produto ativado com sucesso."
+          : "Produto inativado com sucesso.",
+      );
+    } catch {
+      toast.error(
+        item.isActive
+          ? "Não foi possível inativar o produto."
+          : "Não foi possível ativar o produto.",
+      );
+    }
   };
 
-  const deleteItem = (item: IGetProducts) => {
-    setProducts((currentProducts) =>
-      currentProducts.filter((product) => product.id !== item.id),
-    );
+  const deleteItem = async (item: IGetProducts) => {
+    try {
+      await deleteProduct(item.id);
+      setProducts((currentProducts) =>
+        currentProducts.filter((product) => product.id !== item.id),
+      );
+      toast.success("Produto deletado com sucesso.");
+    } catch {
+      toast.error("Não foi possível deletar o produto.");
+    }
   };
 
-  const handleConfirmation = () => {
+  const handleConfirmation = async () => {
     if (!confirmation) return;
 
     if (confirmation.action === "delete") {
-      deleteItem(confirmation.item);
+      await deleteItem(confirmation.item);
     } else {
-      toggleItemStatus(confirmation.item);
+      await toggleItemStatus(confirmation.item);
     }
     setConfirmation(null);
   };
 
-  const [products, setProducts] = useState<IGetProducts[]>([]);
-
-  const fetchProducts = async () => {
-    try {
-      const response = await getProducts();
-      setProducts(response);
-
-      console.log("response", response);
-    } catch (e) {
-      console.log(e);
-    }
-  };
 
   useEffect(() => {
-    fetchProducts();
+    let isMounted = true;
+
+    const fetchProducts = async () => {
+      try {
+        const response = await getProducts();
+        if (isMounted) setProducts(response);
+      } catch {
+        if (isMounted) toast.error("Não foi possível carregar os produtos.");
+      }
+    };
+
+    void fetchProducts();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
@@ -126,8 +187,8 @@ export function Home() {
               id="product-name"
               autoFocus
               required
-              value={newItemName}
-              onChange={(event) => setNewItemName(event.target.value)}
+              value={body.name}
+              onChange={(event) => setBody({ ...body, name: event.target.value }  )}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
@@ -139,13 +200,10 @@ export function Home() {
               Preço
             </label>
             <input
-              id="product-price"
               type="number"
-              min="0"
-              step="0.01"
               required
-              value={newItemPrice}
-              onChange={(event) => setNewItemPrice(event.target.value)}
+              value={body.price}
+              onChange={(event) => setBody({ ...body, price: Number(event.target.value) })}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
@@ -232,16 +290,13 @@ export function Home() {
           {
             label: item.isActive ? "Inativar item" : "Ativar item",
             onClick: (selectedItem) =>
-     
               selectedItem.isActive
                 ? setConfirmation({ action: "deactivate", item: selectedItem })
                 : toggleItemStatus(selectedItem),
           },
           {
             label: "Deletar item",
-            onClick: (selectedItem) =>
-
-              setConfirmation({ action: "delete", item: selectedItem }),
+            onClick: (selectedItem) => setConfirmation({ action: "delete", item: selectedItem }),
             variant: "danger",
           },
         ]}
