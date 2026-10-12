@@ -184,8 +184,6 @@ export function Home() {
               Nome
             </label>
             <input
-              id="product-name"
-              autoFocus
               required
               value={body.name}
               onChange={(event) => setBody({ ...body, name: event.target.value }  )}
