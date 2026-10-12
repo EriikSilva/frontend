@@ -224,12 +224,13 @@ export function Home() {
               htmlFor="product-name"
               className="block text-sm font-medium text-gray-700"
             >
-              Nomeaa
+              Nome
             </label>
             <input
               id="product-name"
               required
               value={body.name}
+              placeholder="Ex: Coca-cola"
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                 const name = event.target.value;
                 console.log("Digitando:", event.target.value);
@@ -251,6 +252,7 @@ export function Home() {
               type="number"
               min="0"
               step="0.01"
+              placeholder="Ex: 5.99"
               required
               value={body.price}
               onChange={(event) => {
@@ -264,13 +266,13 @@ export function Home() {
             <button
               type="button"
               onClick={closeProductModal}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              className="cursor-pointer rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               {editingItem ? "Salvar alterações" : "Salvar produto"}
             </button>
@@ -320,14 +322,14 @@ export function Home() {
             <button
               type="button"
               onClick={() => setProductToDeactivate(null)}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              className="cursor-pointer rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={confirmDeactivation}
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              className="cursor-pointer rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
             >
               Inativar
             </button>

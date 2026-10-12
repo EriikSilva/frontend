@@ -54,7 +54,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             type="button"
             aria-label="Fechar modal"
             onClick={onClose}
-            className="rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="cursor-pointer rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <X aria-hidden="true" size={20} />
           </button>
