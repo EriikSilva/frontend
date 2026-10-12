@@ -2,14 +2,12 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Modal } from "../../components/Modal";
 import { Table } from "../../components/Table";
-import { getProducts } from "../../services/product/product.service";
+import {
+  getProducts,
+  type IGetProducts,
+} from "../../services/product/product.service";
 
-interface Item {
-  id: number;
-  name: string;
-  price: number;
-  active: boolean;
-}
+type Item = IGetProducts;
 
 type Confirmation = {
   action: "delete" | "deactivate";
@@ -22,11 +20,7 @@ export function Home() {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
-  const [items, setItems] = useState<Item[]>([
-    { id: 1, name: "Item 1", price: 10.99, active: true },
-    { id: 2, name: "Item 2", price: 20.99, active: true },
-    { id: 3, name: "Item 3", price: 30.99, active: false },
-  ]);
+
 
   const openAddModal = () => {
     setEditingItem(null);
@@ -53,39 +47,24 @@ export function Home() {
     const price = Number(newItemPrice);
     if (!name || !Number.isFinite(price) || price < 0) return;
 
-    setItems((currentItems) =>
-      editingItem
-        ? currentItems.map((currentItem) =>
-            currentItem.id === editingItem.id
-              ? { ...currentItem, name, price }
-              : currentItem,
-          )
-        : [
-            ...currentItems,
-            {
-              id: Math.max(0, ...currentItems.map((item) => item.id)) + 1,
-              name,
-              price,
-              active: true,
-            },
-          ],
-    );
+
+
     closeProductModal();
   };
 
   const toggleItemStatus = (item: Item) => {
-    setItems((currentItems) =>
-      currentItems.map((currentItem) =>
-        currentItem.id === item.id
-          ? { ...currentItem, active: !currentItem.active }
-          : currentItem,
+    setProducts((currentProducts) =>
+      currentProducts.map((product) =>
+        product.id === item.id
+          ? { ...product, isActive: !product.isActive }
+          : product,
       ),
     );
   };
 
   const deleteItem = (item: Item) => {
-    setItems((currentItems) =>
-      currentItems.filter((currentItem) => currentItem.id !== item.id),
+    setProducts((currentProducts) =>
+      currentProducts.filter((product) => product.id !== item.id),
     );
   };
 
@@ -100,18 +79,22 @@ export function Home() {
     setConfirmation(null);
   };
 
+  const [products, setProducts] = useState<IGetProducts[]>([]);
+
   const fetchProducts = async () => {
-    try{
+    try {
       const response = await getProducts();
-      console.log("response", response)
-    }catch(e){
-      console.log(e)
+      setProducts(response);
+
+      console.log("response", response);
+    } catch (e) {
+      console.log(e);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchProducts()
-  },[])
+    fetchProducts();
+  }, []);
 
   return (
     <main className="mx-auto max-w-5xl space-y-4 p-6">
@@ -187,7 +170,11 @@ export function Home() {
       <Modal
         isOpen={confirmation !== null}
         onClose={() => setConfirmation(null)}
-        title={confirmation?.action === "delete" ? "Deletar produto" : "Inativar produto"}
+        title={
+          confirmation?.action === "delete"
+            ? "Deletar produto"
+            : "Inativar produto"
+        }
       >
         <div className="space-y-5">
           <p className="text-sm text-gray-600">
@@ -215,41 +202,47 @@ export function Home() {
       </Modal>
 
       <Table
+        data={products}
         columns={[
           { key: "name", header: "Nome", render: (item) => item.name },
-          {key: "price", header: "Preço", render: (item) => `R$ ${item.price.toFixed(2)}`},
+          {
+            key: "price",
+            header: "Preço",
+            render: (item) => `R$ ${item.price.toFixed(2)}`,
+          },
           {
             key: "status",
             header: "Status",
             render: (item) => (
               <span
                 className={
-                  item.active
+                  item.isActive
                     ? "inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800"
                     : "inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600"
                 }
               >
-                {item.active ? "Ativo" : "Inativo"}
+                {item.isActive ? "Ativo" : "Inativo"}
               </span>
             ),
           },
         ]}
-        data={items}
         getRowKey={(item) => item.id}
         floatingMenu={(item) => [
           { label: "Editar", onClick: openEditModal },
           {
-            label: item.active ? "Inativar item" : "Ativar item",
+            label: item.isActive ? "Inativar item" : "Ativar item",
             onClick: (selectedItem) =>
-              selectedItem.active
-                ? setConfirmation({ action: "deactivate", item: selectedItem })
-                : toggleItemStatus(selectedItem),
+              console.log("ativar/inativar", selectedItem), 
+              // selectedItem.isActive
+              //   ? setConfirmation({ action: "deactivate", item: selectedItem })
+              //   : toggleItemStatus(selectedItem),
           },
           {
             label: "Deletar item",
             onClick: (selectedItem) =>
-              setConfirmation({ action: "delete", item: selectedItem }),
-            variant: "danger",
+               console.log("ativar/inativar", selectedItem), 
+              // setConfirmation({ action: "delete", item: selectedItem }),
+            // variant: "danger",
           },
         ]}
       />
