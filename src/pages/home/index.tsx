@@ -11,8 +11,23 @@ import {
 } from "../../services/product/product.service";
 import type { IGetProducts } from "../../services/product/product.interface";
 
+export interface IProductions {
+  productions: Production[];
+}
+
+export interface Production {
+  email:                string;
+  order:                string;
+  startDateAppointment: Date;
+  endDateAppointment:   Date;
+  quantity:             number;
+  cycleTime:            number;
+}
+
+
 export function Home() {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [productions, setProductions] = useState<IProductions | null>(null);
   const [productToDelete, setProductToDelete] = useState<IGetProducts | null>(
     null,
   );
@@ -233,7 +248,6 @@ export function Home() {
               placeholder="Ex: Coca-cola"
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                 const name = event.target.value;
-                console.log("Digitando:", event.target.value);
 
                 setBody((currentBody) => ({ ...currentBody, name }));
               }}
