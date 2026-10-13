@@ -17,6 +17,7 @@ export interface IPostProduction {
     order:                string;
     startDateAppointment: Date;
     endDateAppointment:   Date;
+    materialCode:         string;
     quantity:             number | string;
     cycleTime:            number | string;
 }

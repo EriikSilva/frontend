@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { getOrdersByEmail } from "../../services/productions/productions.service";
+import {
+  getOrdersByEmail,
+  postProduction,
+} from "../../services/productions/productions.service";
 import type {
   IPostProduction,
   Production,
@@ -9,14 +12,17 @@ import { Table } from "../../components/Table";
 import { Modal } from "../../components/Modal";
 import Input from "../../components/Input";
 import Select from "../../components/Select";
-import { getOrders, type Order } from "../../services/order/order.service";
+import {
+  getOrders,
+  type Material,
+  type Order,
+} from "../../services/order/order.service";
 
 function Productions() {
   const [productions, setProductions] = useState<Production[]>([]);
-  const [orders, setOrders] = useState<Order[]>([])
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [modal, setModal] = useState<boolean>(false);
-
-  const [order, setOrder] = useState<string>("")
 
   const [bodyProduction, setBodyProduction] = useState<IPostProduction>({
     email: "",
@@ -25,8 +31,8 @@ function Productions() {
     order: "",
     quantity: "",
     startDateAppointment: new Date(),
+    materialCode: "",
   });
-  
 
   const fetchProductionByEmail = async (email: string) => {
     try {
@@ -42,10 +48,28 @@ function Productions() {
   const fetchOrders = async () => {
     try {
       const response = await getOrders();
-      const { orders } = response
-      setOrders(orders)
+      const { orders } = response;
+      setOrders(orders);
     } catch (e) {
       toast.error("Falha ao buscar ordens");
+    }
+  };
+
+  const handleProduction = async () => {
+    try {
+      await postProduction(bodyProduction);
+      toast.success("Produção inserida com sucesso");
+      setModal(false);
+
+      const user = localStorage.getItem("user");
+      if (!user) {
+        return;
+      }
+      const parseUser = JSON.parse(user);
+      const { email } = parseUser;
+      fetchProductionByEmail(decodeURIComponent(email));
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -70,7 +94,10 @@ function Productions() {
           <button
             type="button"
             onClick={() => {
-              setOrder("");
+              setBodyProduction((prev) => ({
+                ...prev,
+                order: "",
+              }));
               setModal(true);
             }}
             className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -115,7 +142,7 @@ function Productions() {
         }}
         title={"Adicionar Produção"}
       >
-        <form className="space-y-4">
+        <div className="space-y-4">
           <div className="space-y-1.5">
             <Input
               value={bodyProduction.email}
@@ -131,36 +158,53 @@ function Productions() {
             />
           </div>
           <div className="space-y-1.5">
-            {/* <Input
-              value={bodyProduction.order}
-              label="Ordem"
-              placeholder="Ex: ORD11"
-              onChange={(event) => {
-                const value = event.target.value;
-                setBodyProduction((prev) => ({
-                  ...prev,
-                  order: value,
-                }));
-              }}
-            /> */}
+            <div className="space-y-1.5">
+              <Select
+                label="Ordem"
+                placeholder="Selecione uma ordem"
+                value={bodyProduction.order}
+                onChange={(event) => {
+                  const value = event.target.value;
 
+                  setBodyProduction((prev) => ({
+                    ...prev,
+                    order: value,
+                  }));
+                  setBodyProduction((prev) => ({
+                    ...prev,
+                    materialCode: "",
+                  }));
+                  const selectedOrder = orders.find(
+                    (item) => item.order === value,
+                  );
+                  setMaterials(selectedOrder?.materials ?? []);
+                }}
+                options={orders.map((item) => ({
+                  label: item.order,
+                  value: item.order,
+                }))}
+              />
+            </div>
 
             <div className="space-y-1.5">
-             <Select
-              label="Ordem"
-              placeholder="Selecione uma ordem"
-              value={order}
-              onChange={(event) => {
-                const value = event.target.value
+              <Select
+                label="Material"
+                placeholder="Selecione um material"
+                value={bodyProduction.materialCode}
+                onChange={(event) => {
+                  const value = event.target.value;
 
-                setOrder(value)
-
-              }}
-              options={orders.map((item) => ({
-                label: item.order, value: item.order
-              }))}
-            />
-          </div>
+                  setBodyProduction((prev) => ({
+                    ...prev,
+                    materialCode: value,
+                  }));
+                }}
+                options={materials.map((item) => ({
+                  label: item.materialDescription,
+                  value: item.materialCode,
+                }))}
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -194,21 +238,25 @@ function Productions() {
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
-            {/* <button
-                    type="button"
-                    onClick={closeProductModal}
-                    className="cursor-pointer rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button> */}
-            {/* <button
-                    type="submit"
-                    className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    {editingItem ? "Salvar alterações" : "Salvar produto"}
-                  </button> */}
+            <button
+              type="button"
+              onClick={() => {
+                setModal(false);
+              }}
+              className="cursor-pointer rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                handleProduction();
+              }}
+              className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Salvar
+            </button>
           </div>
-        </form>
+        </div>
       </Modal>
     </div>
   );

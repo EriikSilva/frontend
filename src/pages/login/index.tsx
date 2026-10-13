@@ -11,7 +11,7 @@ function Login() {
     try {
       const response = await getUserByEmail(email);
       localStorage.setItem("user", JSON.stringify(response));
-      navigate("/products");
+      navigate("/productions");
     } catch (e) {
       toast.error("Erro ao tentar logar, tente novamente mais tarde.");
     }
