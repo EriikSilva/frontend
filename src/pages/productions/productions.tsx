@@ -83,6 +83,12 @@ function Productions() {
   };
 
   const handleProduction = async () => {
+    const email = bodyProduction.email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Informe um email válido");
+      return;
+    }
+
     if (!selectedOrder || startedAt === null) {
       return;
     }
@@ -95,6 +101,7 @@ function Productions() {
 
     const production = {
       ...bodyProduction,
+      email,
       startDateAppointment: new Date(startedAt),
       endDateAppointment: new Date(endTimestamp),
       cycleTime: selectedOrder.cycleTime,
@@ -117,7 +124,7 @@ function Productions() {
       fetchProductionByEmail(decodeURIComponent(email));
     } catch (e) {
       if (e instanceof AxiosError) {
-        toast.error(e.response?.data.title);
+        toast.error(e.response?.data.description);
       }
     } finally {
       setIsSubmitting(false);
@@ -263,6 +270,11 @@ function Productions() {
                   value: item.order,
                 }))}
               />
+              {selectedOrder && (
+                <p className="text-sm text-gray-600">
+                  Quantidade Máxima: {selectedOrder.quantity}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Select
