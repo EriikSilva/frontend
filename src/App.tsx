@@ -25,10 +25,7 @@ function GuestRoute({ children }: { children: ReactNode }) {
 function App() {
   return (
     <BrowserRouter>
-      <ProtectedRoute>
-        {" "}
-        <Header />
-      </ProtectedRoute>
+      <Header />
       <ToastContainer />
       <Routes>
         <Route

@@ -1,12 +1,18 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 function Header() {
   const navigate = useNavigate();
+  useLocation();
+  const isAuthenticated = Boolean(localStorage.getItem("user"));
 
   const handleLogout = () => {
     localStorage.removeItem("user");
     navigate("/login");
   };
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <header className="mb-4 bg-gray-200 px-6 py-4 shadow">
