@@ -8,12 +8,17 @@ function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Informe um email válido");
+      return;
+    }
     try {
       const response = await getUserByEmail(email);
       localStorage.setItem("user", JSON.stringify(response));
       navigate("/productions");
     } catch (e) {
-      toast.error("Erro ao tentar logar, tente novamente mais tarde.");
+      toast.error("Email não encontrado, tente novamente mais tarde.");
     }
   };
 
