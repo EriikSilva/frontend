@@ -12,17 +12,18 @@ import { Table } from "../../components/Table";
 import { Modal } from "../../components/Modal";
 import Input from "../../components/Input";
 import Select from "../../components/Select";
-import {
-  getOrders,
-  type Material,
-  type Order,
-} from "../../services/order/order.service";
+import { getOrders } from "../../services/order/order.service";
+import type { Material, Order } from "../../services/order/order.interface";
+import { AxiosError } from "axios";
 
 function Productions() {
   const [productions, setProductions] = useState<Production[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [modal, setModal] = useState<boolean>(false);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [bodyProduction, setBodyProduction] = useState<IPostProduction>({
     email: "",
@@ -32,7 +33,32 @@ function Productions() {
     quantity: "",
     startDateAppointment: new Date(),
     materialCode: "",
+    cycleTimeElapsed: "",
   });
+
+  const selectedOrder = orders.find(
+    (item) => item.order === bodyProduction.order,
+  );
+  const minimumCycleTime = selectedOrder?.cycleTime ?? 0;
+  const canSubmit =
+    selectedOrder !== undefined &&
+    startedAt !== null &&
+    elapsedSeconds >= minimumCycleTime &&
+    !isSubmitting;
+
+  useEffect(() => {
+    if (startedAt === null) {
+      return;
+    }
+
+    const updateElapsedTime = () => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    };
+
+    updateElapsedTime();
+    const interval = window.setInterval(updateElapsedTime, 250);
+    return () => window.clearInterval(interval);
+  }, [startedAt]);
 
   const fetchProductionByEmail = async (email: string) => {
     try {
@@ -41,7 +67,8 @@ function Productions() {
 
       setProductions(productions);
     } catch (e) {
-      toast.error("Falha ao buscar produções");
+      // toast.error("Falha ao buscar produções");
+      console.log("e", e);
     }
   };
 
@@ -56,10 +83,30 @@ function Productions() {
   };
 
   const handleProduction = async () => {
+    if (!selectedOrder || startedAt === null) {
+      return;
+    }
+
+    const endTimestamp = Date.now();
+    const cycleTime = Math.floor((endTimestamp - startedAt) / 1000);
+    // if (cycleTime < minimumCycleTime) {
+    //   return;
+    // }
+
+    const production = {
+      ...bodyProduction,
+      startDateAppointment: new Date(startedAt),
+      endDateAppointment: new Date(endTimestamp),
+      cycleTime: selectedOrder.cycleTime,
+      cycleTimeElapsed: cycleTime,
+    };
+
+    setIsSubmitting(true);
     try {
-      await postProduction(bodyProduction);
+      await postProduction(production);
       toast.success("Produção inserida com sucesso");
       setModal(false);
+      setStartedAt(null);
 
       const user = localStorage.getItem("user");
       if (!user) {
@@ -69,7 +116,11 @@ function Productions() {
       const { email } = parseUser;
       fetchProductionByEmail(decodeURIComponent(email));
     } catch (e) {
-      console.error(e);
+      if(e instanceof AxiosError){
+        toast.error(e.response?.data.title);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -94,10 +145,16 @@ function Productions() {
           <button
             type="button"
             onClick={() => {
+              const startedAt = Date.now();
               setBodyProduction((prev) => ({
                 ...prev,
                 order: "",
+                cycleTime: "",
+                startDateAppointment: new Date(startedAt),
+                endDateAppointment: new Date(),
               }));
+              setStartedAt(startedAt);
+              setElapsedSeconds(0);
               setModal(true);
             }}
             className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -111,25 +168,31 @@ function Productions() {
             { key: "email", header: "E-mail", render: (item) => item.email },
             { key: "order", header: "Ordem", render: (item) => item.order },
             {
-              key: "startDateAppointment",
-              header: "Início",
-              render: (item) =>
-                new Date(item.startDateAppointment).toLocaleString("pt-BR"),
-            },
-            // {
-            //   key: "endDateAppointment",
-            //   header: "Término",
-            //   render: (item) => new Date(item.endDateAppointment).toLocaleString("pt-BR"),
-            // },
-            {
               key: "quantity",
               header: "Quantidade",
               render: (item) => item.quantity,
             },
             {
+              key: "startDateAppointment",
+              header: "Início",
+              render: (item) =>
+                new Date(item.startDateAppointment).toLocaleString("pt-BR"),
+            },
+            {
+              key: "endDateAppointment",
+              header: "Término",
+              render: (item) =>
+                new Date(item.endDateAppointment).toLocaleString("pt-BR"),
+            },
+            {
               key: "cycleTime",
               header: "Tempo de ciclo",
               render: (item) => item.cycleTime,
+            },
+            {
+              key: "cycleTimeElapsed",
+              header: "Tempo decorrido",
+              render: (item) => item.cycleTimeElapsed,
             },
           ]}
         />
@@ -139,6 +202,17 @@ function Productions() {
         isOpen={modal}
         onClose={() => {
           setModal(false);
+          setStartedAt(null);
+          setBodyProduction({
+            email: "",
+            cycleTime: "",
+            endDateAppointment: new Date(),
+            order: "",
+            quantity: "",
+            startDateAppointment: new Date(),
+            materialCode: "",
+            cycleTimeElapsed: "",
+          });
         }}
         title={"Adicionar Produção"}
       >
@@ -148,6 +222,7 @@ function Productions() {
               value={bodyProduction.email}
               placeholder={"Ex: janedoe@gmail.com"}
               label="Email"
+              // disabled
               onChange={(event) => {
                 const value = event.target.value;
                 setBodyProduction((prev) => ({
@@ -165,19 +240,16 @@ function Productions() {
                 value={bodyProduction.order}
                 onChange={(event) => {
                   const value = event.target.value;
-
-                  setBodyProduction((prev) => ({
-                    ...prev,
-                    order: value,
-                  }));
-                  setBodyProduction((prev) => ({
-                    ...prev,
-                    materialCode: "",
-                  }));
                   const selectedOrder = orders.find(
                     (item) => item.order === value,
                   );
                   setMaterials(selectedOrder?.materials ?? []);
+                  setBodyProduction((prev) => ({
+                    ...prev,
+                    order: value,
+                    materialCode: "",
+                    cycleTime: "",
+                  }));
                 }}
                 options={orders.map((item) => ({
                   label: item.order,
@@ -185,7 +257,6 @@ function Productions() {
                 }))}
               />
             </div>
-
             <div className="space-y-1.5">
               <Select
                 label="Material"
@@ -222,19 +293,15 @@ function Productions() {
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Input
-              value={bodyProduction.cycleTime}
-              label="Tempo de ciclo:"
-              placeholder="Ex: 5"
-              onChange={(event) => {
-                const value = event.target.value.replace(/\D/g, "");
-                setBodyProduction((prev) => ({
-                  ...prev,
-                  cycleTime: value,
-                }));
-              }}
-            />
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-gray-700">
+              Tempo de ciclo decorrido
+            </p>
+            <p aria-live="polite" className="text-sm text-gray-600">
+              {elapsedSeconds} segundos
+              {selectedOrder &&
+                ` (mínimo: ${selectedOrder.cycleTime} segundos)`}
+            </p>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
@@ -242,18 +309,31 @@ function Productions() {
               type="button"
               onClick={() => {
                 setModal(false);
+                setStartedAt(null);
+                setBodyProduction({
+                  email: "",
+                  cycleTime: "",
+                  endDateAppointment: new Date(),
+                  order: "",
+                  quantity: "",
+                  startDateAppointment: new Date(),
+                  materialCode: "",
+                  cycleTimeElapsed: "",
+                });
               }}
               className="cursor-pointer rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
               Cancelar
             </button>
             <button
+              type="button"
               onClick={() => {
                 handleProduction();
               }}
-              className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              // disabled={!canSubmit}
+              className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Salvar
+              {isSubmitting ? "Enviando..." : "Salvar"}
             </button>
           </div>
         </div>

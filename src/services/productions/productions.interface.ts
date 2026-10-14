@@ -9,6 +9,7 @@ export interface Production {
     endDateAppointment:   string;
     quantity:             number;
     cycleTime:            number;
+    cycleTimeElapsed:     number;
 }
 
 
@@ -20,4 +21,5 @@ export interface IPostProduction {
     materialCode:         string;
     quantity:             number | string;
     cycleTime:            number | string;
+    cycleTimeElapsed:     number | string
 }

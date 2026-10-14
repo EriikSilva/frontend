@@ -5,9 +5,10 @@ interface IInputProps {
   onChange: React.ChangeEventHandler<HTMLInputElement>;
   label:string
   placeholder?:string
+  disabled?:boolean
 }
 
-function Input({ onChange, value, label, placeholder }: IInputProps) {
+function Input({ onChange, value, label, placeholder, disabled = false }: IInputProps) {
   return (
     <div>
       <label
@@ -17,6 +18,7 @@ function Input({ onChange, value, label, placeholder }: IInputProps) {
       <input
         id="product-name"
         required
+        disabled={disabled}
         value={value}
         placeholder={placeholder}
         onChange={onChange}
