@@ -89,6 +89,11 @@ function Productions() {
       return;
     }
 
+    if (!String(bodyProduction.quantity).trim()) {
+      toast.error("Informe a quantidade");
+      return;
+    }
+
     if (!selectedOrder || startedAt === null) {
       return;
     }
