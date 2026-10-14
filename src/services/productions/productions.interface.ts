@@ -10,6 +10,7 @@ export interface Production {
     quantity:             number;
     cycleTime:            number;
     cycleTimeElapsed:     number;
+    materialDescription:  string;
 }
 
 

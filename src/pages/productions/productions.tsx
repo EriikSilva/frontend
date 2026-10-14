@@ -116,7 +116,7 @@ function Productions() {
       const { email } = parseUser;
       fetchProductionByEmail(decodeURIComponent(email));
     } catch (e) {
-      if(e instanceof AxiosError){
+      if (e instanceof AxiosError) {
         toast.error(e.response?.data.title);
       }
     } finally {
@@ -146,13 +146,16 @@ function Productions() {
             type="button"
             onClick={() => {
               const startedAt = Date.now();
-              setBodyProduction((prev) => ({
-                ...prev,
-                order: "",
+              setBodyProduction({
+                email: "",
                 cycleTime: "",
-                startDateAppointment: new Date(startedAt),
                 endDateAppointment: new Date(),
-              }));
+                order: "",
+                quantity: "",
+                startDateAppointment: new Date(startedAt),
+                materialCode: "",
+                cycleTimeElapsed: "",
+              });
               setStartedAt(startedAt);
               setElapsedSeconds(0);
               setModal(true);
@@ -165,25 +168,29 @@ function Productions() {
         <Table
           data={productions}
           columns={[
-            { key: "email", header: "E-mail", render: (item) => item.email },
-            { key: "order", header: "Ordem", render: (item) => item.order },
+            {
+              key: "startDateAppointment",
+              header: "Início do apontamento",
+              render: (item) =>
+                new Date(item.startDateAppointment).toLocaleString("pt-BR"),
+            },
+            {
+              key: "endDateAppointment",
+              header: "Término do apontamento",
+              render: (item) =>
+                new Date(item.endDateAppointment).toLocaleString("pt-BR"),
+            },
             {
               key: "quantity",
               header: "Quantidade",
               render: (item) => item.quantity,
             },
             {
-              key: "startDateAppointment",
-              header: "Início",
-              render: (item) =>
-                new Date(item.startDateAppointment).toLocaleString("pt-BR"),
+              key: "materialDescription",
+              header: "Material",
+              render: (item) => item.materialDescription,
             },
-            {
-              key: "endDateAppointment",
-              header: "Término",
-              render: (item) =>
-                new Date(item.endDateAppointment).toLocaleString("pt-BR"),
-            },
+            { key: "order", header: "Ordem", render: (item) => item.order },
             {
               key: "cycleTime",
               header: "Tempo de ciclo",
