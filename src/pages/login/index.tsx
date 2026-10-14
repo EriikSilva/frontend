@@ -19,7 +19,6 @@ function Login() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <div className="flex p-10 rounded-md items-center justify-center bg-gray-100 ">
         <div className="w-full max-w-2xl rounded-xl bg-white p-12 shadow-lg">
           <h1 className="mb-6 text-center text-3xl font-bold text-gray-800">
             Login
@@ -49,7 +48,6 @@ function Login() {
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 }
