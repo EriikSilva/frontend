@@ -84,6 +84,8 @@ function Productions() {
 
   const handleProduction = async () => {
     const email = bodyProduction.email.trim();
+
+    console.log("body", bodyProduction)
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error("Informe um email válido");
       return;
@@ -91,6 +93,11 @@ function Productions() {
 
     if (!String(bodyProduction.quantity).trim()) {
       toast.error("Informe a quantidade");
+      return;
+    }
+
+     if (bodyProduction.quantity === "0") {
+      toast.error("Quantidade deve ser maior que zero");
       return;
     }
 
